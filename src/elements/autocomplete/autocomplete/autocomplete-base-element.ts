@@ -160,6 +160,7 @@ export abstract class SbbAutocompleteBaseElement<T = string> extends SbbNegative
   protected generatedId: string = '';
   protected activeOption: SbbOptionBaseElement<T> | null = null;
   protected pendingAutoSelectedOption: SbbOptionBaseElement<T> | null = null;
+  private _valueBeforePendingSelection = '';
   private _resizeObserver = new ResizeController(this, {
     target: null,
     skipInitial: true,
@@ -270,10 +271,14 @@ export abstract class SbbAutocompleteBaseElement<T = string> extends SbbNegative
       return;
     }
 
-    // A 'pending selection' is confirmed on panel close
     if (this.pendingAutoSelectedOption) {
-      this.pendingAutoSelectedOption.selected = true;
-      this._setValueAndDispatchEvents(this.pendingAutoSelectedOption, true);
+      if (this.triggerElement?.matches(':disabled, [readonly]')) {
+        this.triggerElement.value = this._valueBeforePendingSelection;
+        this.pendingAutoSelectedOption = null;
+      } else {
+        this.pendingAutoSelectedOption.selected = true;
+        this._setValueAndDispatchEvents(this.pendingAutoSelectedOption, true);
+      }
     }
 
     this.state = 'closing';
@@ -359,6 +364,9 @@ export abstract class SbbAutocompleteBaseElement<T = string> extends SbbNegative
    * will reset the pending value.
    */
   protected setPendingSelection(activeOption: SbbOptionBaseElement<T>): void {
+    if (!this.pendingAutoSelectedOption) {
+      this._valueBeforePendingSelection = this.triggerElement?.value ?? '';
+    }
     this.pendingAutoSelectedOption = activeOption;
     this._setInputValue(activeOption);
   }

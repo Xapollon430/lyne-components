@@ -415,6 +415,29 @@ describe(`sbb-autocomplete`, () => {
         expect(document.activeElement?.localName).not.to.be.equal('input'); // Ensure the focus is not trapped
       });
 
+      for (const attribute of ['disabled', 'readonly']) {
+        it(`discards the pending selection when the trigger becomes ${attribute}`, async () => {
+          input.value = 'Original';
+          const closeSpy = new EventSpy(SbbAutocompleteElement.events.close, element);
+
+          input.focus();
+          await openSpy.calledOnce();
+          await sendKeys({ press: 'ArrowDown' });
+          await waitForLitRender(element);
+          expect(input.value).to.be.equal('1');
+          expect(changeEventSpy.count).to.be.equal(0);
+
+          input.toggleAttribute(attribute, true);
+          await closeSpy.calledOnce();
+
+          expect(input.value).to.be.equal('Original');
+          expect(optOne).not.to.have.attribute('selected');
+          expect(changeEventSpy.count).to.be.equal(0);
+          expect(inputEventSpy.count).to.be.equal(0);
+          expect(inputAutocompleteSpy.count).to.be.equal(0);
+        });
+      }
+
       it('should reset pending selection on user input', async () => {
         input.focus();
         await openSpy.calledOnce();
